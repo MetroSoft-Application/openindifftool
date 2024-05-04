@@ -1,4 +1,4 @@
-# OpenInDiffTool
+# Open In DiffTool
 
 Select two files from the Explorer to compare differences.
 

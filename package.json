@@ -1,6 +1,6 @@
 {
   "name": "openindifftool",
-  "displayName": "OpenInDiffTool",
+  "displayName": "Open In DiffTool",
   "description": "Select two files from the Explorer to compare differences.",
   "version": "1.0.0",
   "publisher": "MetroSoft-Application",
