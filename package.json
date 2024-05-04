@@ -1,10 +1,22 @@
 {
   "name": "openindifftool",
   "displayName": "OpenInDiffTool",
-  "description": "",
-  "version": "0.0.1",
+  "description": "Select two files from the Explorer to compare differences.",
+  "version": "1.0.0",
+  "publisher": "MetroSoft-Application",
+  "icon": "resources/img/openindifftool.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MetroSoft-Application/openindifftool"
+  },
+  "license": "MIT",
+  "keywords": [
+    "compare",
+    "diff",
+    "merge"
+  ],
   "engines": {
-    "vscode": "^1.89.0"
+    "vscode": "^1.38.0"
   },
   "categories": [
     "Other"
@@ -17,20 +29,14 @@
     "commands": [
       {
         "command": "openindifftool.GetDiff",
-        "title": "GetDiff"
+        "title": "openindifftool.GetDiff"
       }
     ],
     "menus": {
       "explorer/context": [
         {
           "command": "openindifftool.GetDiff",
-          "group": "navigation"
-        }
-      ],
-      "editor/title": [
-        {
-          "command": "openindifftool.GetDiff",
-          "group": "navigation"
+          "group": "3_compare"
         }
       ]
     },
@@ -55,7 +61,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.89.0",
+    "@types/vscode": "^1.38.0",
     "@types/mocha": "^10.0.6",
     "@types/node": "18.x",
     "@typescript-eslint/eslint-plugin": "^7.7.1",

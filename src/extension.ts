@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 const { spawn } = require('child_process');
-const { window, Uri, workspace } = require('vscode');
 
 export function activate(context: vscode.ExtensionContext) {
 	const diffToolSetting = vscode.workspace.getConfiguration().get('openindifftool.diffTool');
@@ -24,16 +23,15 @@ async function fileDiff(e: vscode.Uri, list?: vscode.Uri[]) {
 	}
 
 	if (leftPath && rightPath) {
-		const diffToolPath: string | undefined = workspace.getConfiguration().get('openindifftool.diffTool');
-
+		const diffToolPath: string | undefined = vscode.workspace.getConfiguration().get('openindifftool.diffTool');
 		if (diffToolPath) {
 			const diffProcess = spawn(diffToolPath, [leftPath, rightPath]);
 			diffProcess.on('error', (err: { message: any; }) => {
 				console.error('Failed to start the diff tool:', err);
-				window.showErrorMessage(`Failed to start the diff tool: ${err.message}`);
+				vscode.window.showErrorMessage(`Failed to start the diff tool: ${err.message}`);
 			});
 		} else {
-			window.showErrorMessage('Diff tool path is not specified in the settings.');
+			vscode.window.showErrorMessage('Diff tool path is not specified in the settings.');
 		}
 	}
 }

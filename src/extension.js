@@ -39,9 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 var vscode = require("vscode");
 var spawn = require('child_process').spawn;
-var _a = require('vscode'), window = _a.window, Uri = _a.Uri, workspace = _a.workspace;
 function activate(context) {
-    console.log('Congratulations, your extension "openindifftool" is now active!');
     var diffToolSetting = vscode.workspace.getConfiguration().get('openindifftool.diffTool');
     if (diffToolSetting) {
         vscode.workspace.getConfiguration().update('openindifftool.diffTool', 'WinMergeU.exe', vscode.ConfigurationTarget.Global);
@@ -62,17 +60,16 @@ function fileDiff(e, list) {
                 _a = list.map(function (p) { return p.fsPath; }), leftPath = _a[0], rightPath = _a[1];
             }
             if (leftPath && rightPath) {
-                diffToolPath = workspace.getConfiguration().get('openindifftool.diffTool');
-                // If the diff tool path is specified in the settings, start the diff tool process
+                diffToolPath = vscode.workspace.getConfiguration().get('openindifftool.diffTool');
                 if (diffToolPath) {
                     diffProcess = spawn(diffToolPath, [leftPath, rightPath]);
                     diffProcess.on('error', function (err) {
                         console.error('Failed to start the diff tool:', err);
-                        window.showErrorMessage("Failed to start the diff tool: ".concat(err.message));
+                        vscode.window.showErrorMessage("Failed to start the diff tool: ".concat(err.message));
                     });
                 }
                 else {
-                    window.showErrorMessage('Diff tool path is not specified in the settings.');
+                    vscode.window.showErrorMessage('Diff tool path is not specified in the settings.');
                 }
             }
             return [2 /*return*/];
