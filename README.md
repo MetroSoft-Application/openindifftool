@@ -7,13 +7,21 @@ Select two files from the Explorer to compare differences.
 - You can launch an external diff tool to check the differences between files.
 - Use WinMerge as default diff tool.
 
-## Usage
+## Usage1
 
 1. Select multiple files with `Ctrl+click`, etc.
 2. Select `openindifftool.GetDiff` from the context menu.
 3. The diff tool you set up will show you the differences.
 
-![Image](./resources/img/openindifftoolSample.gif)
+![Image](./resources/img/openindifftool.GetDiff.Sample.gif)
+
+## Usage2
+
+1. Select modified file In `Source Control`
+2. Select `openindifftool.GetDiffWithGit` from the context menu.
+3. The diff tool you set up will show you the differences.
+
+![Image](./resources/img/openindifftool.GetDiffWithGit.Sample.gif)
 
 ## Config
 

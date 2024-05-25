@@ -39,14 +39,74 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 var vscode = require("vscode");
 var spawn = require('child_process').spawn;
+var path = require("path");
+var os = require("os");
+var fs = require("fs");
+var cp = require("child_process");
 function activate(context) {
     var diffToolSetting = vscode.workspace.getConfiguration().get('openindifftool.diffTool');
     if (diffToolSetting) {
         vscode.workspace.getConfiguration().update('openindifftool.diffTool', 'WinMergeU.exe', vscode.ConfigurationTarget.Global);
     }
     context.subscriptions.push(vscode.commands.registerCommand('openindifftool.GetDiff', fileDiff));
+    context.subscriptions.push(vscode.commands.registerCommand('openindifftool.GetDiffWithGit', handleOpenWithGit));
 }
 exports.activate = activate;
+function handleOpenWithGit(resource) {
+    return __awaiter(this, void 0, void 0, function () {
+        var uri, filePath, workspaceFolder, originalFilePath, error_1;
+        var _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    if (!resource) {
+                        vscode.window.showErrorMessage('No resource selected');
+                        return [2 /*return*/];
+                    }
+                    uri = resource.resourceUri;
+                    filePath = uri.fsPath;
+                    workspaceFolder = (_a = vscode.workspace.getWorkspaceFolder(uri)) === null || _a === void 0 ? void 0 : _a.uri.fsPath;
+                    if (!workspaceFolder) {
+                        vscode.window.showErrorMessage('No workspace folder found');
+                        return [2 /*return*/];
+                    }
+                    _b.label = 1;
+                case 1:
+                    _b.trys.push([1, 4, , 5]);
+                    return [4 /*yield*/, getOriginalFilePath(workspaceFolder, filePath)];
+                case 2:
+                    originalFilePath = _b.sent();
+                    return [4 /*yield*/, fileDiff(vscode.Uri.file(originalFilePath), [vscode.Uri.file(originalFilePath), vscode.Uri.file(filePath)])];
+                case 3:
+                    _b.sent();
+                    return [3 /*break*/, 5];
+                case 4:
+                    error_1 = _b.sent();
+                    vscode.window.showErrorMessage("Error getting original file: ".concat(error_1.message));
+                    return [3 /*break*/, 5];
+                case 5: return [2 /*return*/];
+            }
+        });
+    });
+}
+function getOriginalFilePath(workspaceFolder, filePath) {
+    return new Promise(function (resolve, reject) {
+        var relativeFilePath = path.relative(workspaceFolder, filePath).replace(/\\/g, '/');
+        var tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-git-'));
+        var originalFilePath = path.join(tempDir, path.basename(filePath));
+        var gitCommand = "git show HEAD:\"".concat(relativeFilePath, "\"");
+        console.log("Executing: ".concat(gitCommand, " in ").concat(workspaceFolder));
+        cp.exec(gitCommand, { cwd: workspaceFolder }, function (err, stdout, stderr) {
+            if (err) {
+                console.error("Git show command failed: ".concat(stderr));
+                reject(new Error("Git show command failed: ".concat(stderr)));
+                return;
+            }
+            fs.writeFileSync(originalFilePath, stdout);
+            resolve(originalFilePath);
+        });
+    });
+}
 function fileDiff(e, list) {
     return __awaiter(this, void 0, void 0, function () {
         var leftPath, rightPath, diffToolPath, diffProcess;

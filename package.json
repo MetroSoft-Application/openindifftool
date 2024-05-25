@@ -1,8 +1,8 @@
 {
   "name": "openindifftool",
   "displayName": "Open In DiffTool",
-  "description": "Select two files from the Explorer to compare differences.",
-  "version": "1.0.0",
+  "description": "Select the two files from Explorer and compare the differences with any diff tool.",
+  "version": "1.0.1",
   "publisher": "MetroSoft-Application",
   "icon": "resources/img/openindifftool.png",
   "repository": {
@@ -13,7 +13,8 @@
   "keywords": [
     "compare",
     "diff",
-    "merge"
+    "merge",
+    "git"
   ],
   "engines": {
     "vscode": "^1.38.0"
@@ -30,6 +31,10 @@
       {
         "command": "openindifftool.GetDiff",
         "title": "openindifftool.GetDiff"
+      },
+      {
+        "command": "openindifftool.GetDiffWithGit",
+        "title": "openindifftool.GetDiffWithGit"
       }
     ],
     "menus": {
@@ -37,6 +42,13 @@
         {
           "command": "openindifftool.GetDiff",
           "group": "3_compare"
+        }
+      ],
+      "scm/resourceState/context": [
+        {
+          "command": "openindifftool.GetDiffWithGit",
+          "group": "3_compare",
+          "when": "scmProvider == git"
         }
       ]
     },
