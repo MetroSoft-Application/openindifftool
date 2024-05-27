@@ -2,7 +2,7 @@
   "name": "openindifftool",
   "displayName": "Open In DiffTool",
   "description": "Select the two files from Explorer and compare the differences with any diff tool.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "MetroSoft-Application",
   "icon": "resources/img/openindifftool.png",
   "repository": {
@@ -33,8 +33,8 @@
         "title": "openindifftool.GetDiff"
       },
       {
-        "command": "openindifftool.GetDiffWithGit",
-        "title": "openindifftool.GetDiffWithGit"
+        "command": "openindifftool.GetDiffWithScm",
+        "title": "openindifftool.GetDiffWithScm"
       }
     ],
     "menus": {
@@ -46,9 +46,8 @@
       ],
       "scm/resourceState/context": [
         {
-          "command": "openindifftool.GetDiffWithGit",
-          "group": "3_compare",
-          "when": "scmProvider == git"
+          "command": "openindifftool.GetDiffWithScm",
+          "group": "3_compare"
         }
       ]
     },

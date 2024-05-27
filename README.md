@@ -18,10 +18,11 @@ Select two files from the Explorer to compare differences.
 ## Usage2
 
 1. Select modified file In `Source Control`
-2. Select `openindifftool.GetDiffWithGit` from the context menu.
+2. Select `openindifftool.GetDiffWithScm` from the context menu.
 3. The diff tool you set up will show you the differences.
+4. [svn extensions](https://github.com/JohnstonCode/svn-scm) are also supported.
 
-![Image](./resources/img/openindifftool.GetDiffWithGit.Sample.gif)
+![Image](./resources/img/openindifftool.GetDiffWithScm.Sample.gif)
 
 ## Config
 

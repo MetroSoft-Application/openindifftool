@@ -50,7 +50,7 @@ function activate(context) {
     // Diffツールの設定を更新
     updateDiffToolSetting();
     // コマンドを登録
-    context.subscriptions.push(vscode.commands.registerCommand('openindifftool.GetDiff', fileDiff), vscode.commands.registerCommand('openindifftool.GetDiffWithGit', handleOpenWithGit));
+    context.subscriptions.push(vscode.commands.registerCommand('openindifftool.GetDiff', fileDiff), vscode.commands.registerCommand('openindifftool.GetDiffWithScm', handleOpenWithGit));
 }
 exports.activate = activate;
 /**
@@ -111,18 +111,53 @@ function handleOpenWithGit(resource) {
 function getOriginalFilePath(workspaceFolder, filePath) {
     return new Promise(function (resolve, reject) {
         var relativeFilePath = path.relative(workspaceFolder, filePath).replace(/\\/g, '/');
-        var tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-git-'));
+        var tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-scm-'));
         var originalFilePath = path.join(tempDir, path.basename(filePath));
-        var gitCommand = "git show HEAD:\"".concat(relativeFilePath, "\"");
-        console.log("Executing: ".concat(gitCommand, " in ").concat(workspaceFolder));
-        (0, child_process_1.exec)(gitCommand, { cwd: workspaceFolder }, function (err, stdout, stderr) {
-            if (err) {
-                console.error("Git show command failed: ".concat(stderr)); // Gitコマンドのエラーハンドリング
-                reject(new Error("Git show command failed: ".concat(stderr)));
-                return;
+        isGitRepo(workspaceFolder).then(function (isGit) {
+            if (isGit) {
+                var gitCommand = "git show HEAD:\"".concat(relativeFilePath, "\"");
+                console.log("Executing: ".concat(gitCommand, " in ").concat(workspaceFolder));
+                (0, child_process_1.exec)(gitCommand, { cwd: workspaceFolder }, function (err, stdout, stderr) {
+                    if (err) {
+                        console.error("Git show command failed: ".concat(stderr));
+                        reject(new Error("Git show command failed: ".concat(stderr)));
+                        return;
+                    }
+                    fs.writeFileSync(originalFilePath, stdout);
+                    resolve(originalFilePath);
+                });
             }
-            fs.writeFileSync(originalFilePath, stdout); // 元ファイルの内容を書き込み
-            resolve(originalFilePath);
+            else {
+                var svnCommand = "svn cat \"".concat(relativeFilePath, "\"");
+                console.log("Executing: ".concat(svnCommand, " in ").concat(workspaceFolder));
+                (0, child_process_1.exec)(svnCommand, { cwd: workspaceFolder }, function (err, stdout, stderr) {
+                    if (err) {
+                        console.error("SVN cat command failed: ".concat(stderr));
+                        reject(new Error("SVN cat command failed: ".concat(stderr)));
+                        return;
+                    }
+                    fs.writeFileSync(originalFilePath, stdout);
+                    resolve(originalFilePath);
+                });
+            }
+        }).catch(function (error) {
+            reject(error);
+        });
+    });
+}
+/**
+ * Gitリポジトリであるかを判定する関数
+ * @param workspaceFolder ワークスペースフォルダ
+ */
+function isGitRepo(workspaceFolder) {
+    return new Promise(function (resolve, reject) {
+        (0, child_process_1.exec)('git rev-parse --is-inside-work-tree', { cwd: workspaceFolder }, function (err) {
+            if (err) {
+                resolve(false);
+            }
+            else {
+                resolve(true);
+            }
         });
     });
 }

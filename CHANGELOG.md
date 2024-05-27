@@ -5,3 +5,7 @@
 ## [1.0.1]
 
 - Support for Git diffs
+
+## [1.0.2]
+
+- Support for Svn diffs

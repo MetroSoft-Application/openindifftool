@@ -15,7 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// コマンドを登録
 	context.subscriptions.push(
 		vscode.commands.registerCommand('openindifftool.GetDiff', fileDiff),
-		vscode.commands.registerCommand('openindifftool.GetDiffWithGit', handleOpenWithGit)
+		vscode.commands.registerCommand('openindifftool.GetDiffWithScm', handleOpenWithGit)
 	);
 }
 
@@ -64,21 +64,57 @@ async function handleOpenWithGit(resource: vscode.SourceControlResourceState) {
 function getOriginalFilePath(workspaceFolder: string, filePath: string): Promise<string> {
 	return new Promise((resolve, reject) => {
 		const relativeFilePath = path.relative(workspaceFolder, filePath).replace(/\\/g, '/');
-		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-git-'));
+		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-scm-'));
 		const originalFilePath = path.join(tempDir, path.basename(filePath));
 
-		const gitCommand = `git show HEAD:"${relativeFilePath}"`;
-		console.log(`Executing: ${gitCommand} in ${workspaceFolder}`);
+		isGitRepo(workspaceFolder).then((isGit) => {
+			if (isGit) {
+				const gitCommand = `git show HEAD:"${relativeFilePath}"`;
+				console.log(`Executing: ${gitCommand} in ${workspaceFolder}`);
 
-		exec(gitCommand, { cwd: workspaceFolder }, (err, stdout, stderr) => {
-			if (err) {
-				console.error(`Git show command failed: ${stderr}`); // Gitコマンドのエラーハンドリング
-				reject(new Error(`Git show command failed: ${stderr}`));
-				return;
+				exec(gitCommand, { cwd: workspaceFolder }, (err, stdout, stderr) => {
+					if (err) {
+						console.error(`Git show command failed: ${stderr}`);
+						reject(new Error(`Git show command failed: ${stderr}`));
+						return;
+					}
+
+					fs.writeFileSync(originalFilePath, stdout);
+					resolve(originalFilePath);
+				});
+			} else {
+				const svnCommand = `svn cat "${relativeFilePath}"`;
+				console.log(`Executing: ${svnCommand} in ${workspaceFolder}`);
+
+				exec(svnCommand, { cwd: workspaceFolder }, (err, stdout, stderr) => {
+					if (err) {
+						console.error(`SVN cat command failed: ${stderr}`);
+						reject(new Error(`SVN cat command failed: ${stderr}`));
+						return;
+					}
+
+					fs.writeFileSync(originalFilePath, stdout);
+					resolve(originalFilePath);
+				});
 			}
+		}).catch((error) => {
+			reject(error);
+		});
+	});
+}
 
-			fs.writeFileSync(originalFilePath, stdout); // 元ファイルの内容を書き込み
-			resolve(originalFilePath);
+/**
+ * Gitリポジトリであるかを判定する関数
+ * @param workspaceFolder ワークスペースフォルダ
+ */
+function isGitRepo(workspaceFolder: string): Promise<boolean> {
+	return new Promise((resolve, reject) => {
+		exec('git rev-parse --is-inside-work-tree', { cwd: workspaceFolder }, (err) => {
+			if (err) {
+				resolve(false);
+			} else {
+				resolve(true);
+			}
 		});
 	});
 }
