@@ -3,6 +3,7 @@ import { spawn, exec } from 'child_process';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
+import * as cp from 'child_process';
 
 /**
  * 拡張機能を有効化する関数
@@ -48,7 +49,8 @@ async function handleOpenWithGit(resource: vscode.SourceControlResourceState) {
 	}
 
 	try {
-		const originalFilePath = await getOriginalFilePath(workspaceFolder, filePath);
+		const scmFolder = await findSCMFolder(filePath);
+		const originalFilePath = await getOriginalFilePath(scmFolder, filePath);
 		await fileDiff(vscode.Uri.file(originalFilePath), [vscode.Uri.file(originalFilePath), vscode.Uri.file(filePath)]);
 	} catch (error) {
 		vscode.window.showErrorMessage(`Error getting original file: ${(error as Error).message}`); // エラーメッセージの表示
@@ -56,23 +58,51 @@ async function handleOpenWithGit(resource: vscode.SourceControlResourceState) {
 }
 
 /**
- * Gitリポジトリから元のファイルパスを取得する関数
- * @param workspaceFolder ワークスペースフォルダ
- * @param filePath ファイルパス
- * @returns 元のファイルパスを解決するPromise
+ * SCMフォルダ（.gitまたは.svn）を探す関数
+ * @param {string} filePath
+ * @returns {Promise<string>}
  */
-function getOriginalFilePath(workspaceFolder: string, filePath: string): Promise<string> {
+function findSCMFolder(filePath: string): Promise<string> {
 	return new Promise((resolve, reject) => {
-		const relativeFilePath = path.relative(workspaceFolder, filePath).replace(/\\/g, '/');
+		let currentDir = filePath;
+
+		while (currentDir) {
+			if (fs.existsSync(path.join(currentDir, '.git'))) {
+				return resolve(currentDir);
+			}
+			if (fs.existsSync(path.join(currentDir, '.svn'))) {
+				return resolve(currentDir);
+			}
+			const parentDir = path.dirname(currentDir);
+			if (parentDir === currentDir){
+				break;
+			}
+
+			currentDir = parentDir;
+		}
+
+		return reject(new Error('SCMフォルダが見つかりません'));
+	});
+}
+
+/**
+ * SCMリポジトリ（GitまたはSVN）から元のファイルを取得する関数
+ * @param {string} scmFolder
+ * @param {string} filePath
+ * @returns {Promise<string>}
+ */
+function getOriginalFilePath(scmFolder: string, filePath: string): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const relativeFilePath = path.relative(scmFolder, filePath).replace(/\\/g, '/');
 		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-scm-'));
 		const originalFilePath = path.join(tempDir, path.basename(filePath));
 
-		isGitRepo(workspaceFolder).then((isGit) => {
+		isGitRepo(scmFolder).then((isGit) => {
 			if (isGit) {
 				const gitCommand = `git show HEAD:"${relativeFilePath}"`;
-				console.log(`Executing: ${gitCommand} in ${workspaceFolder}`);
+				console.log(`Executing: ${gitCommand} in ${scmFolder}`);
 
-				exec(gitCommand, { cwd: workspaceFolder }, (err, stdout, stderr) => {
+				cp.exec(gitCommand, { cwd: scmFolder }, (err, stdout, stderr) => {
 					if (err) {
 						console.error(`Git show command failed: ${stderr}`);
 						reject(new Error(`Git show command failed: ${stderr}`));
@@ -84,9 +114,9 @@ function getOriginalFilePath(workspaceFolder: string, filePath: string): Promise
 				});
 			} else {
 				const svnCommand = `svn cat "${relativeFilePath}"`;
-				console.log(`Executing: ${svnCommand} in ${workspaceFolder}`);
+				console.log(`Executing: ${svnCommand} in ${scmFolder}`);
 
-				exec(svnCommand, { cwd: workspaceFolder }, (err, stdout, stderr) => {
+				cp.exec(svnCommand, { cwd: scmFolder }, (err, stdout, stderr) => {
 					if (err) {
 						console.error(`SVN cat command failed: ${stderr}`);
 						reject(new Error(`SVN cat command failed: ${stderr}`));
@@ -104,12 +134,13 @@ function getOriginalFilePath(workspaceFolder: string, filePath: string): Promise
 }
 
 /**
- * Gitリポジトリであるかを判定する関数
- * @param workspaceFolder ワークスペースフォルダ
+ * Gitリポジトリかどうかを判定する関数
+ * @param {string} scmFolder
+ * @returns {Promise<boolean>}
  */
-function isGitRepo(workspaceFolder: string): Promise<boolean> {
+function isGitRepo(scmFolder: string): Promise<boolean> {
 	return new Promise((resolve, reject) => {
-		exec('git rev-parse --is-inside-work-tree', { cwd: workspaceFolder }, (err) => {
+		cp.exec('git rev-parse --is-inside-work-tree', { cwd: scmFolder }, (err) => {
 			if (err) {
 				resolve(false);
 			} else {

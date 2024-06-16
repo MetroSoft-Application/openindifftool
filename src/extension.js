@@ -42,6 +42,7 @@ var child_process_1 = require("child_process");
 var path = require("path");
 var os = require("os");
 var fs = require("fs");
+var cp = require("child_process");
 /**
  * 拡張機能を有効化する関数
  * @param context 拡張機能のコンテキスト
@@ -68,7 +69,7 @@ function updateDiffToolSetting() {
  */
 function handleOpenWithGit(resource) {
     return __awaiter(this, void 0, void 0, function () {
-        var filePath, workspaceFolder, originalFilePath, error_1;
+        var filePath, workspaceFolder, scmFolder, originalFilePath, error_1;
         var _a;
         return __generator(this, function (_b) {
             switch (_b.label) {
@@ -85,39 +86,66 @@ function handleOpenWithGit(resource) {
                     }
                     _b.label = 1;
                 case 1:
-                    _b.trys.push([1, 4, , 5]);
-                    return [4 /*yield*/, getOriginalFilePath(workspaceFolder, filePath)];
+                    _b.trys.push([1, 5, , 6]);
+                    return [4 /*yield*/, findSCMFolder(filePath)];
                 case 2:
+                    scmFolder = _b.sent();
+                    return [4 /*yield*/, getOriginalFilePath(scmFolder, filePath)];
+                case 3:
                     originalFilePath = _b.sent();
                     return [4 /*yield*/, fileDiff(vscode.Uri.file(originalFilePath), [vscode.Uri.file(originalFilePath), vscode.Uri.file(filePath)])];
-                case 3:
-                    _b.sent();
-                    return [3 /*break*/, 5];
                 case 4:
+                    _b.sent();
+                    return [3 /*break*/, 6];
+                case 5:
                     error_1 = _b.sent();
                     vscode.window.showErrorMessage("Error getting original file: ".concat(error_1.message)); // エラーメッセージの表示
-                    return [3 /*break*/, 5];
-                case 5: return [2 /*return*/];
+                    return [3 /*break*/, 6];
+                case 6: return [2 /*return*/];
             }
         });
     });
 }
 /**
- * Gitリポジトリから元のファイルパスを取得する関数
- * @param workspaceFolder ワークスペースフォルダ
- * @param filePath ファイルパス
- * @returns 元のファイルパスを解決するPromise
+ * SCMフォルダ（.gitまたは.svn）を探す関数
+ * @param {string} filePath
+ * @returns {Promise<string>}
  */
-function getOriginalFilePath(workspaceFolder, filePath) {
+function findSCMFolder(filePath) {
     return new Promise(function (resolve, reject) {
-        var relativeFilePath = path.relative(workspaceFolder, filePath).replace(/\\/g, '/');
+        var currentDir = filePath;
+        while (currentDir) {
+            if (fs.existsSync(path.join(currentDir, '.git'))) {
+                return resolve(currentDir);
+            }
+            if (fs.existsSync(path.join(currentDir, '.svn'))) {
+                return resolve(currentDir);
+            }
+            var parentDir = path.dirname(currentDir);
+            if (parentDir === currentDir) {
+                break;
+            }
+            currentDir = parentDir;
+        }
+        return reject(new Error('SCMフォルダが見つかりません'));
+    });
+}
+/**
+ * SCMリポジトリ（GitまたはSVN）から元のファイルを取得する関数
+ * @param {string} scmFolder
+ * @param {string} filePath
+ * @returns {Promise<string>}
+ */
+function getOriginalFilePath(scmFolder, filePath) {
+    return new Promise(function (resolve, reject) {
+        var relativeFilePath = path.relative(scmFolder, filePath).replace(/\\/g, '/');
         var tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-scm-'));
         var originalFilePath = path.join(tempDir, path.basename(filePath));
-        isGitRepo(workspaceFolder).then(function (isGit) {
+        isGitRepo(scmFolder).then(function (isGit) {
             if (isGit) {
                 var gitCommand = "git show HEAD:\"".concat(relativeFilePath, "\"");
-                console.log("Executing: ".concat(gitCommand, " in ").concat(workspaceFolder));
-                (0, child_process_1.exec)(gitCommand, { cwd: workspaceFolder }, function (err, stdout, stderr) {
+                console.log("Executing: ".concat(gitCommand, " in ").concat(scmFolder));
+                cp.exec(gitCommand, { cwd: scmFolder }, function (err, stdout, stderr) {
                     if (err) {
                         console.error("Git show command failed: ".concat(stderr));
                         reject(new Error("Git show command failed: ".concat(stderr)));
@@ -129,8 +157,8 @@ function getOriginalFilePath(workspaceFolder, filePath) {
             }
             else {
                 var svnCommand = "svn cat \"".concat(relativeFilePath, "\"");
-                console.log("Executing: ".concat(svnCommand, " in ").concat(workspaceFolder));
-                (0, child_process_1.exec)(svnCommand, { cwd: workspaceFolder }, function (err, stdout, stderr) {
+                console.log("Executing: ".concat(svnCommand, " in ").concat(scmFolder));
+                cp.exec(svnCommand, { cwd: scmFolder }, function (err, stdout, stderr) {
                     if (err) {
                         console.error("SVN cat command failed: ".concat(stderr));
                         reject(new Error("SVN cat command failed: ".concat(stderr)));
@@ -146,12 +174,13 @@ function getOriginalFilePath(workspaceFolder, filePath) {
     });
 }
 /**
- * Gitリポジトリであるかを判定する関数
- * @param workspaceFolder ワークスペースフォルダ
+ * Gitリポジトリかどうかを判定する関数
+ * @param {string} scmFolder
+ * @returns {Promise<boolean>}
  */
-function isGitRepo(workspaceFolder) {
+function isGitRepo(scmFolder) {
     return new Promise(function (resolve, reject) {
-        (0, child_process_1.exec)('git rev-parse --is-inside-work-tree', { cwd: workspaceFolder }, function (err) {
+        cp.exec('git rev-parse --is-inside-work-tree', { cwd: scmFolder }, function (err) {
             if (err) {
                 resolve(false);
             }

@@ -9,3 +9,7 @@
 ## [1.0.2]
 
 - Support for Svn diffs
+
+## [1.0.3]
+
+- Fixed recursive scan of git/svn folders in workspace
