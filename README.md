@@ -20,9 +20,18 @@ Select two files from the Explorer to compare differences.
 1. Select modified file In `Source Control`
 2. Select `openindifftool.GetDiffWithScm` from the context menu.
 3. The diff tool you set up will show you the differences.
-4. [svn extensions](https://github.com/JohnstonCode/svn-scm) are also supported.
+4. [svn extensions](https://marketplace.visualstudio.com/items?itemName=johnstoncode.svn-scm) are also supported.
 
 ![Image](./resources/img/openindifftool.GetDiffWithScm.Sample.gif)
+
+## Usage3
+
+1. Select modified file in a text editor.
+2. Select `openindifftool.GetDiffFromEditorTab` from the context menu of the tab.
+3. Select `openindifftool.GetDiffFromEditorTab` from the context menu of the tab of the compared file.
+4. The diff tool you set up will show you the differences.
+
+![Image](./resources/img/openindifftool.GetDiffFromEditorTab.gif)
 
 ## Config
 

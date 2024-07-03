@@ -43,6 +43,8 @@ var path = require("path");
 var os = require("os");
 var fs = require("fs");
 var cp = require("child_process");
+// グローバル変数として最初に選択されたタブのURIを保持する
+var firstSelectedTabUri = null;
 /**
  * 拡張機能を有効化する関数
  * @param context 拡張機能のコンテキスト
@@ -51,7 +53,7 @@ function activate(context) {
     // Diffツールの設定を更新
     updateDiffToolSetting();
     // コマンドを登録
-    context.subscriptions.push(vscode.commands.registerCommand('openindifftool.GetDiff', fileDiff), vscode.commands.registerCommand('openindifftool.GetDiffWithScm', handleOpenWithGit));
+    context.subscriptions.push(vscode.commands.registerCommand('openindifftool.GetDiff', fileDiff), vscode.commands.registerCommand('openindifftool.GetDiffWithScm', handleOpenWithGit), vscode.commands.registerCommand('openindifftool.GetDiffFromEditorTab', handleOpenFromEditorTab));
 }
 exports.activate = activate;
 /**
@@ -102,6 +104,35 @@ function handleOpenWithGit(resource) {
                     vscode.window.showErrorMessage("Error getting original file: ".concat(error_1.message)); // エラーメッセージの表示
                     return [3 /*break*/, 6];
                 case 6: return [2 /*return*/];
+            }
+        });
+    });
+}
+/**
+ * エディタタブのコンテキストメニューからコマンドを処理する関数
+ * @param {vscode.Uri} uri - 選択されたタブのURI
+ */
+function handleOpenFromEditorTab(uri) {
+    return __awaiter(this, void 0, void 0, function () {
+        var secondSelectedTabUri, uris;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    if (!!firstSelectedTabUri) return [3 /*break*/, 1];
+                    // 最初の選択を保持する
+                    firstSelectedTabUri = uri;
+                    vscode.window.showInformationMessage("First file selected: ".concat(uri.fsPath, "."));
+                    return [3 /*break*/, 3];
+                case 1:
+                    secondSelectedTabUri = uri;
+                    uris = [firstSelectedTabUri, secondSelectedTabUri];
+                    return [4 /*yield*/, fileDiff(vscode.Uri.file(firstSelectedTabUri.fsPath), uris)];
+                case 2:
+                    _a.sent();
+                    // 比較が完了したらリセット
+                    firstSelectedTabUri = null;
+                    _a.label = 3;
+                case 3: return [2 /*return*/];
             }
         });
     });

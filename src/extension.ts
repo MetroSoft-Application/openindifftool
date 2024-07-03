@@ -5,6 +5,9 @@ import * as os from 'os';
 import * as fs from 'fs';
 import * as cp from 'child_process';
 
+// グローバル変数として最初に選択されたタブのURIを保持する
+let firstSelectedTabUri: vscode.Uri | null = null;
+
 /**
  * 拡張機能を有効化する関数
  * @param context 拡張機能のコンテキスト
@@ -16,7 +19,8 @@ export function activate(context: vscode.ExtensionContext) {
 	// コマンドを登録
 	context.subscriptions.push(
 		vscode.commands.registerCommand('openindifftool.GetDiff', fileDiff),
-		vscode.commands.registerCommand('openindifftool.GetDiffWithScm', handleOpenWithGit)
+		vscode.commands.registerCommand('openindifftool.GetDiffWithScm', handleOpenWithGit),
+		vscode.commands.registerCommand('openindifftool.GetDiffFromEditorTab', handleOpenFromEditorTab)
 	);
 }
 
@@ -58,6 +62,26 @@ async function handleOpenWithGit(resource: vscode.SourceControlResourceState) {
 }
 
 /**
+ * エディタタブのコンテキストメニューからコマンドを処理する関数
+ * @param {vscode.Uri} uri - 選択されたタブのURI
+ */
+async function handleOpenFromEditorTab(uri: vscode.Uri) {
+	if (!firstSelectedTabUri) {
+		// 最初の選択を保持する
+		firstSelectedTabUri = uri;
+		vscode.window.showInformationMessage(`First file selected: ${uri.fsPath}.`);
+	} else {
+		// 2回目の選択で比較を行う
+		const secondSelectedTabUri = uri;
+		const uris = [firstSelectedTabUri, secondSelectedTabUri];
+		await fileDiff(vscode.Uri.file(firstSelectedTabUri.fsPath), uris);
+
+		// 比較が完了したらリセット
+		firstSelectedTabUri = null;
+	}
+}
+
+/**
  * SCMフォルダ（.gitまたは.svn）を探す関数
  * @param {string} filePath
  * @returns {Promise<string>}
@@ -74,7 +98,7 @@ function findSCMFolder(filePath: string): Promise<string> {
 				return resolve(currentDir);
 			}
 			const parentDir = path.dirname(currentDir);
-			if (parentDir === currentDir){
+			if (parentDir === currentDir) {
 				break;
 			}
 

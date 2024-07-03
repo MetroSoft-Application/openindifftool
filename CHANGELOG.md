@@ -13,3 +13,7 @@
 ## [1.0.3]
 
 - Fixed recursive scan of git/svn folders in workspace
+
+## [1.0.4]
+
+- Supports file selection from tabs

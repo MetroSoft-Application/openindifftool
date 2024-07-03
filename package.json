@@ -35,6 +35,10 @@
       {
         "command": "openindifftool.GetDiffWithScm",
         "title": "openindifftool.GetDiffWithScm"
+      },
+      {
+        "command": "openindifftool.GetDiffFromEditorTab",
+        "title": "openindifftool.GetDiffFromEditorTab"
       }
     ],
     "menus": {
@@ -48,6 +52,12 @@
         {
           "command": "openindifftool.GetDiffWithScm",
           "group": "3_compare"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "openindifftool.GetDiffFromEditorTab",
+          "group": "navigation"
         }
       ]
     },
