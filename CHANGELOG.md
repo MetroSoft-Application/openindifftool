@@ -17,3 +17,7 @@
 ## [1.0.4]
 
 - Supports file selection from tabs
+
+## [1.0.5]
+
+- `openindifftool.GetDiffFromEditorTab` moved to group `3_compare`
