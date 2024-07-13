@@ -21,3 +21,7 @@
 ## [1.0.5]
 
 - `openindifftool.GetDiffFromEditorTab` moved to group `3_compare`
+
+## [1.0.6]
+
+- `openindifftool.GetDiffFromEditorTab` supports comparing unsaved files

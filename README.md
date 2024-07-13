@@ -31,6 +31,8 @@ Select two files from the Explorer to compare differences.
 3. Select `openindifftool.GetDiffFromEditorTab` from the context menu of the tab of the compared file.
 4. The diff tool you set up will show you the differences.
 
+   **Tip**: `openindifftool.GetDiffFromEditorTab` supports comparing unsaved files.
+
 ![Image](./resources/img/openindifftool.GetDiffFromEditorTab.gif)
 
 ## Config

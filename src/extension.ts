@@ -7,6 +7,8 @@ import * as cp from 'child_process';
 
 // グローバル変数として最初に選択されたタブのURIを保持する
 let firstSelectedTabUri: vscode.Uri | null = null;
+// 一時ファイルのパスを保持する配列
+let tempFiles: string[] = [];
 
 /**
  * 拡張機能を有効化する関数
@@ -40,7 +42,7 @@ function updateDiffToolSetting() {
  */
 async function handleOpenWithGit(resource: vscode.SourceControlResourceState) {
 	if (!resource) {
-		vscode.window.showErrorMessage('No resource selected'); // リソースが選択されていない場合のエラーメッセージ
+		vscode.window.showErrorMessage('No resource selected');
 		return;
 	}
 
@@ -48,7 +50,7 @@ async function handleOpenWithGit(resource: vscode.SourceControlResourceState) {
 	const workspaceFolder = vscode.workspace.getWorkspaceFolder(resource.resourceUri)?.uri.fsPath;
 
 	if (!workspaceFolder) {
-		vscode.window.showErrorMessage('No workspace folder found'); // ワークスペースフォルダが見つからない場合のエラーメッセージ
+		vscode.window.showErrorMessage('No workspace folder found');
 		return;
 	}
 
@@ -57,7 +59,7 @@ async function handleOpenWithGit(resource: vscode.SourceControlResourceState) {
 		const originalFilePath = await getOriginalFilePath(scmFolder, filePath);
 		await fileDiff(vscode.Uri.file(originalFilePath), [vscode.Uri.file(originalFilePath), vscode.Uri.file(filePath)]);
 	} catch (error) {
-		vscode.window.showErrorMessage(`Error getting original file: ${(error as Error).message}`); // エラーメッセージの表示
+		vscode.window.showErrorMessage(`Error getting original file: ${(error as Error).message}`);
 	}
 }
 
@@ -78,6 +80,9 @@ async function handleOpenFromEditorTab(uri: vscode.Uri) {
 
 		// 比較が完了したらリセット
 		firstSelectedTabUri = null;
+
+		// 一時ファイルを削除
+		deleteTempFiles();
 	}
 }
 
@@ -92,9 +97,23 @@ async function getOrSaveFileUri(uri: vscode.Uri): Promise<vscode.Uri> {
 		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-'));
 		const tempFilePath = path.join(tempDir, path.basename(uri.fsPath));
 		fs.writeFileSync(tempFilePath, document.getText());
+		// 一時ファイルのパスを配列に追加
+		tempFiles.push(tempFilePath);
 		return vscode.Uri.file(tempFilePath);
 	}
 	return uri;
+}
+
+/**
+ * 一時ファイルを削除する関数
+ */
+function deleteTempFiles() {
+	setTimeout(() => {
+		for (const tempFile of tempFiles) {
+			fs.unlinkSync(tempFile);
+		}
+		tempFiles = [];
+	}, 5000);
 }
 
 /**
@@ -197,7 +216,8 @@ function isGitRepo(scmFolder: string): Promise<boolean> {
  */
 async function fileDiff(e: vscode.Uri, list?: vscode.Uri[]) {
 	if (!list || list.length !== 2) {
-		vscode.window.showErrorMessage('Comparison requires exactly 2 files.'); // ファイルリストのバリデーション
+		// ファイルリストのバリデーション
+		vscode.window.showErrorMessage('Comparison requires exactly 2 files.');
 		return;
 	}
 
@@ -205,13 +225,19 @@ async function fileDiff(e: vscode.Uri, list?: vscode.Uri[]) {
 	const diffToolPath: string | undefined = vscode.workspace.getConfiguration().get('openindifftool.diffTool');
 
 	if (diffToolPath) {
-		const diffProcess = spawn(diffToolPath, [leftPath, rightPath]); // Diffツールを実行
+		// Diffツールを実行
+		const diffProcess = spawn(diffToolPath, [leftPath, rightPath]);
+		diffProcess.on('close', () => {
+			// Diffツールのプロセスが終了したときに一時ファイルを削除
+			deleteTempFiles();
+		});
 		diffProcess.on('error', (err: { message: string; }) => {
 			console.error('Failed to start the diff tool:', err);
 			vscode.window.showErrorMessage(`Failed to start the diff tool: ${err.message}`);
 		});
 	} else {
-		vscode.window.showErrorMessage('Diff tool path is not specified in the settings.'); // Diffツールのパスが設定されていない場合のエラーメッセージ
+		// Diffツールのパスが設定されていない場合のエラーメッセージ
+		vscode.window.showErrorMessage('Diff tool path is not specified in the settings.');
 	}
 }
 
