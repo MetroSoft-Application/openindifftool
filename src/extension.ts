@@ -68,17 +68,33 @@ async function handleOpenWithGit(resource: vscode.SourceControlResourceState) {
 async function handleOpenFromEditorTab(uri: vscode.Uri) {
 	if (!firstSelectedTabUri) {
 		// 最初の選択を保持する
-		firstSelectedTabUri = uri;
-		vscode.window.showInformationMessage(`First file selected: ${uri.fsPath}.`);
+		firstSelectedTabUri = await getOrSaveFileUri(uri);
+		vscode.window.showInformationMessage(`First file selected: ${firstSelectedTabUri.fsPath}.`);
 	} else {
 		// 2回目の選択で比較を行う
-		const secondSelectedTabUri = uri;
+		const secondSelectedTabUri = await getOrSaveFileUri(uri);
 		const uris = [firstSelectedTabUri, secondSelectedTabUri];
 		await fileDiff(vscode.Uri.file(firstSelectedTabUri.fsPath), uris);
 
 		// 比較が完了したらリセット
 		firstSelectedTabUri = null;
 	}
+}
+
+/**
+ * ファイルが保存されているか確認し、保存されていなければ一時フォルダに保存する関数
+ * @param uri ファイルのURI
+ * @returns 保存されたファイルのURI
+ */
+async function getOrSaveFileUri(uri: vscode.Uri): Promise<vscode.Uri> {
+	const document = await vscode.workspace.openTextDocument(uri);
+	if (document.isDirty) {
+		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-'));
+		const tempFilePath = path.join(tempDir, path.basename(uri.fsPath));
+		fs.writeFileSync(tempFilePath, document.getText());
+		return vscode.Uri.file(tempFilePath);
+	}
+	return uri;
 }
 
 /**

@@ -118,21 +118,48 @@ function handleOpenFromEditorTab(uri) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    if (!!firstSelectedTabUri) return [3 /*break*/, 1];
-                    // 最初の選択を保持する
-                    firstSelectedTabUri = uri;
-                    vscode.window.showInformationMessage("First file selected: ".concat(uri.fsPath, "."));
-                    return [3 /*break*/, 3];
+                    if (!!firstSelectedTabUri) return [3 /*break*/, 2];
+                    return [4 /*yield*/, getOrSaveFileUri(uri)];
                 case 1:
-                    secondSelectedTabUri = uri;
+                    // 最初の選択を保持する
+                    firstSelectedTabUri = _a.sent();
+                    vscode.window.showInformationMessage("First file selected: ".concat(firstSelectedTabUri.fsPath, "."));
+                    return [3 /*break*/, 5];
+                case 2: return [4 /*yield*/, getOrSaveFileUri(uri)];
+                case 3:
+                    secondSelectedTabUri = _a.sent();
                     uris = [firstSelectedTabUri, secondSelectedTabUri];
                     return [4 /*yield*/, fileDiff(vscode.Uri.file(firstSelectedTabUri.fsPath), uris)];
-                case 2:
+                case 4:
                     _a.sent();
                     // 比較が完了したらリセット
                     firstSelectedTabUri = null;
-                    _a.label = 3;
-                case 3: return [2 /*return*/];
+                    _a.label = 5;
+                case 5: return [2 /*return*/];
+            }
+        });
+    });
+}
+/**
+ * ファイルが保存されているか確認し、保存されていなければ一時フォルダに保存する関数
+ * @param uri ファイルのURI
+ * @returns 保存されたファイルのURI
+ */
+function getOrSaveFileUri(uri) {
+    return __awaiter(this, void 0, void 0, function () {
+        var document, tempDir, tempFilePath;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, vscode.workspace.openTextDocument(uri)];
+                case 1:
+                    document = _a.sent();
+                    if (document.isDirty) {
+                        tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-'));
+                        tempFilePath = path.join(tempDir, path.basename(uri.fsPath));
+                        fs.writeFileSync(tempFilePath, document.getText());
+                        return [2 /*return*/, vscode.Uri.file(tempFilePath)];
+                    }
+                    return [2 /*return*/, uri];
             }
         });
     });
