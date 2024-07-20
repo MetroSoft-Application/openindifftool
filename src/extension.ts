@@ -80,9 +80,6 @@ async function handleOpenFromEditorTab(uri: vscode.Uri) {
 
 		// 比較が完了したらリセット
 		firstSelectedTabUri = null;
-
-		// 一時ファイルを削除
-		deleteTempFiles();
 	}
 }
 
@@ -113,7 +110,7 @@ function deleteTempFiles() {
 			fs.unlinkSync(tempFile);
 		}
 		tempFiles = [];
-	}, 5000);
+	}, 1000);
 }
 
 /**

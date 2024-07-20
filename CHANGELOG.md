@@ -25,3 +25,7 @@
 ## [1.0.6]
 
 - `openindifftool.GetDiffFromEditorTab` supports comparing unsaved files
+
+## [1.0.7]
+
+- v1.0.6 bug fix

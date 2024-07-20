@@ -136,8 +136,6 @@ function handleOpenFromEditorTab(uri) {
                     _a.sent();
                     // 比較が完了したらリセット
                     firstSelectedTabUri = null;
-                    // 一時ファイルを削除
-                    deleteTempFiles();
                     _a.label = 5;
                 case 5: return [2 /*return*/];
             }
@@ -180,7 +178,7 @@ function deleteTempFiles() {
             fs.unlinkSync(tempFile);
         }
         tempFiles = [];
-    }, 5000);
+    }, 1000);
 }
 /**
  * SCMフォルダ（.gitまたは.svn）を探す関数
