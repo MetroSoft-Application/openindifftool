@@ -38,7 +38,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 var vscode = require("vscode");
-var child_process_1 = require("child_process");
 var path = require("path");
 var os = require("os");
 var fs = require("fs");
@@ -55,7 +54,7 @@ function activate(context) {
     // Diffツールの設定を更新
     updateDiffToolSetting();
     // コマンドを登録
-    context.subscriptions.push(vscode.commands.registerCommand('openindifftool.GetDiff', fileDiff), vscode.commands.registerCommand('openindifftool.GetDiffWithScm', handleOpenWithGit), vscode.commands.registerCommand('openindifftool.GetDiffFromEditorTab', handleOpenFromEditorTab));
+    context.subscriptions.push(vscode.commands.registerCommand('openindifftool.GetDiff', fileDiff), vscode.commands.registerCommand('openindifftool.GetDiffWithScm', handleOpenWithGit), vscode.commands.registerCommand('openindifftool.GetDiffFromEditorTab', handleOpenFromEditorTab), vscode.commands.registerCommand('openindifftool.GetDiffFromSelectedText', handleOpenFromSelectedText));
 }
 exports.activate = activate;
 /**
@@ -137,6 +136,48 @@ function handleOpenFromEditorTab(uri) {
                     firstSelectedTabUri = null;
                     _a.label = 5;
                 case 5: return [2 /*return*/];
+            }
+        });
+    });
+}
+/**
+ * エディタのコンテキストメニューからコマンドを処理する関数
+ * 選択したテキストを一時ファイルに保存して比較を行う
+ */
+function handleOpenFromSelectedText() {
+    return __awaiter(this, void 0, void 0, function () {
+        var editor, selection, selectedText, tempDir, tempFilePath, tempUri, uris;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    editor = vscode.window.activeTextEditor;
+                    if (!editor) {
+                        vscode.window.showErrorMessage('No active editor found');
+                        return [2 /*return*/];
+                    }
+                    selection = editor.selection;
+                    selectedText = editor.document.getText(selection);
+                    if (!selectedText) {
+                        vscode.window.showErrorMessage('No text selected');
+                        return [2 /*return*/];
+                    }
+                    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-'));
+                    tempFilePath = path.join(tempDir, "selected-text-".concat(Date.now(), ".txt"));
+                    fs.writeFileSync(tempFilePath, selectedText);
+                    tempFiles.push(tempFilePath);
+                    tempUri = vscode.Uri.file(tempFilePath);
+                    if (!!firstSelectedTabUri) return [3 /*break*/, 1];
+                    firstSelectedTabUri = tempUri;
+                    vscode.window.showInformationMessage("First file selected: ".concat(tempFilePath, "."));
+                    return [3 /*break*/, 3];
+                case 1:
+                    uris = [firstSelectedTabUri, tempUri];
+                    return [4 /*yield*/, fileDiff(firstSelectedTabUri, uris)];
+                case 2:
+                    _a.sent();
+                    firstSelectedTabUri = null;
+                    _a.label = 3;
+                case 3: return [2 /*return*/];
             }
         });
     });
@@ -282,7 +323,7 @@ function fileDiff(e, list) {
             _a = list.map(function (uri) { return uri.fsPath; }), leftPath = _a[0], rightPath = _a[1];
             diffToolPath = vscode.workspace.getConfiguration().get('openindifftool.diffTool');
             if (diffToolPath) {
-                diffProcess = (0, child_process_1.spawn)(diffToolPath, [leftPath, rightPath]);
+                diffProcess = cp.spawn(diffToolPath, [leftPath, rightPath]);
                 diffProcess.on('close', function () {
                     // Diffツールのプロセスが終了したときに一時ファイルを削除
                     deleteTempFiles();

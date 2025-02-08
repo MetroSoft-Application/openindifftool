@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { spawn, exec } from 'child_process';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
@@ -22,7 +21,8 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('openindifftool.GetDiff', fileDiff),
 		vscode.commands.registerCommand('openindifftool.GetDiffWithScm', handleOpenWithGit),
-		vscode.commands.registerCommand('openindifftool.GetDiffFromEditorTab', handleOpenFromEditorTab)
+		vscode.commands.registerCommand('openindifftool.GetDiffFromEditorTab', handleOpenFromEditorTab),
+		vscode.commands.registerCommand('openindifftool.GetDiffFromSelectedText', handleOpenFromSelectedText)
 	);
 }
 
@@ -78,6 +78,42 @@ async function handleOpenFromEditorTab(uri: vscode.Uri) {
 		await fileDiff(vscode.Uri.file(firstSelectedTabUri.fsPath), uris);
 
 		// 比較が完了したらリセット
+		firstSelectedTabUri = null;
+	}
+}
+
+/**
+ * エディタのコンテキストメニューからコマンドを処理する関数
+ * 選択したテキストを一時ファイルに保存して比較を行う
+ */
+async function handleOpenFromSelectedText() {
+	const editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		vscode.window.showErrorMessage('No active editor found');
+		return;
+	}
+
+	// 選択されたテキストを取得
+	const selection = editor.selection;
+	const selectedText = editor.document.getText(selection);
+	if (!selectedText) {
+		vscode.window.showErrorMessage('No text selected');
+		return;
+	}
+
+	// 選択テキストを一時ファイルとして保存
+	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-'));
+	const tempFilePath = path.join(tempDir, `selected-text-${Date.now()}.txt`);
+	fs.writeFileSync(tempFilePath, selectedText);
+	tempFiles.push(tempFilePath);
+	const tempUri = vscode.Uri.file(tempFilePath);
+
+	if (!firstSelectedTabUri) {
+		firstSelectedTabUri = tempUri;
+		vscode.window.showInformationMessage(`First file selected: ${tempFilePath}.`);
+	} else {
+		const uris = [firstSelectedTabUri, tempUri];
+		await fileDiff(firstSelectedTabUri, uris);
 		firstSelectedTabUri = null;
 	}
 }
@@ -225,7 +261,7 @@ async function fileDiff(e: vscode.Uri, list?: vscode.Uri[]) {
 
 	if (diffToolPath) {
 		// Diffツールを実行
-		const diffProcess = spawn(diffToolPath, [leftPath, rightPath]);
+		const diffProcess = cp.spawn(diffToolPath, [leftPath, rightPath]);
 		diffProcess.on('close', () => {
 			// Diffツールのプロセスが終了したときに一時ファイルを削除
 			deleteTempFiles();

@@ -39,6 +39,10 @@
       {
         "command": "openindifftool.GetDiffFromEditorTab",
         "title": "openindifftool.GetDiffFromEditorTab"
+      },
+      {
+        "command": "openindifftool.GetDiffFromSelectedText",
+        "title": "openindifftool.GetDiffFromSelectedText"
       }
     ],
     "menus": {
@@ -57,6 +61,12 @@
       "editor/title/context": [
         {
           "command": "openindifftool.GetDiffFromEditorTab",
+          "group": "3_compare"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "openindifftool.GetDiffFromSelectedText",
           "group": "3_compare"
         }
       ]
