@@ -8,6 +8,8 @@ import * as cp from 'child_process';
 let firstSelectedTabUri: vscode.Uri | null = null;
 // 一時ファイルのパスを保持する配列
 let tempFiles: string[] = [];
+// 一時ファイルディレクトリの命名の統一
+const TEMP_DIR_PREFIX = 'vscode-difftool-';
 
 /**
  * 拡張機能を有効化する関数
@@ -71,6 +73,8 @@ async function handleOpenFromEditorTab(uri: vscode.Uri) {
 	if (!firstSelectedTabUri) {
 		// 最初の選択を保持する
 		firstSelectedTabUri = await getOrSaveFileUri(uri);
+		const tempFilePath = tempFiles.length > 0 ? tempFiles[tempFiles.length - 1] : firstSelectedTabUri.fsPath;
+		vscode.window.showInformationMessage(`First file selected: ${tempFilePath}.`);
 	} else {
 		// 2回目の選択で比較を行う
 		const secondSelectedTabUri = await getOrSaveFileUri(uri);
@@ -87,34 +91,39 @@ async function handleOpenFromEditorTab(uri: vscode.Uri) {
  * 選択したテキストを一時ファイルに保存して比較を行う
  */
 async function handleOpenFromSelectedText() {
-	const editor = vscode.window.activeTextEditor;
-	if (!editor) {
-		vscode.window.showErrorMessage('No active editor found');
-		return;
-	}
+	try {
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) {
+			vscode.window.showErrorMessage('No active editor found');
+			return;
+		}
 
-	// 選択されたテキストを取得
-	const selection = editor.selection;
-	const selectedText = editor.document.getText(selection);
-	if (!selectedText) {
-		vscode.window.showErrorMessage('No text selected');
-		return;
-	}
+		// 選択されたテキストを取得
+		const selection = editor.selection;
+		const selectedText = editor.document.getText(selection);
+		if (!selectedText) {
+			vscode.window.showErrorMessage('No text selected');
+			return;
+		}
 
-	// 選択テキストを一時ファイルとして保存
-	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-'));
-	const tempFilePath = path.join(tempDir, `selected-text-${Date.now()}.txt`);
-	fs.writeFileSync(tempFilePath, selectedText);
-	tempFiles.push(tempFilePath);
-	const tempUri = vscode.Uri.file(tempFilePath);
+		// 選択テキストを一時ファイルとして保存
+		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), TEMP_DIR_PREFIX));
+		const tempFilePath = path.join(tempDir, `selected-text-${Date.now()}.txt`);
+		fs.writeFileSync(tempFilePath, selectedText);
+		tempFiles.push(tempFilePath);
+		const tempUri = vscode.Uri.file(tempFilePath);
 
-	if (!firstSelectedTabUri) {
-		firstSelectedTabUri = tempUri;
-		vscode.window.showInformationMessage(`First file selected: ${tempFilePath}.`);
-	} else {
-		const uris = [firstSelectedTabUri, tempUri];
-		await fileDiff(firstSelectedTabUri, uris);
-		firstSelectedTabUri = null;
+		if (!firstSelectedTabUri) {
+			firstSelectedTabUri = tempUri;
+			vscode.window.showInformationMessage(`First file selected: ${tempFilePath}.`);
+		} else {
+			const uris = [firstSelectedTabUri, tempUri];
+			await fileDiff(firstSelectedTabUri, uris);
+			firstSelectedTabUri = null;
+		}
+	} catch (error) {
+		vscode.window.showErrorMessage(`Error: ${(error as Error).message}`);
+		deleteTempFiles();
 	}
 }
 
@@ -126,14 +135,13 @@ async function handleOpenFromSelectedText() {
 async function getOrSaveFileUri(uri: vscode.Uri): Promise<vscode.Uri> {
 	const document = await vscode.workspace.openTextDocument(uri);
 	if (document.isDirty) {
-		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-'));
+		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), TEMP_DIR_PREFIX));
 		const tempFilePath = path.join(tempDir, path.basename(uri.fsPath));
 		fs.writeFileSync(tempFilePath, document.getText());
 
 		console.log(`File saved to: ${tempFilePath}`);
 		// 一時ファイルのパスを配列に追加
 		tempFiles.push(tempFilePath);
-		vscode.window.showInformationMessage(`First file selected: ${tempFilePath}.`);
 		return vscode.Uri.file(tempFilePath);
 	}
 	return uri;
@@ -188,7 +196,7 @@ function findSCMFolder(filePath: string): Promise<string> {
 function getOriginalFilePath(scmFolder: string, filePath: string): Promise<string> {
 	return new Promise((resolve, reject) => {
 		const relativeFilePath = path.relative(scmFolder, filePath).replace(/\\/g, '/');
-		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-scm-'));
+		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), TEMP_DIR_PREFIX));
 		const originalFilePath = path.join(tempDir, path.basename(filePath));
 
 		isGitRepo(scmFolder).then((isGit) => {
@@ -279,4 +287,6 @@ async function fileDiff(e: vscode.Uri, list?: vscode.Uri[]) {
 /**
  * 拡張機能を無効化する関数
  */
-export function deactivate() { }
+export function deactivate() {
+	deleteTempFiles();
+}

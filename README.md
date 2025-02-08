@@ -35,6 +35,17 @@ Select two files from the Explorer to compare differences.
 
 ![Image](./resources/img/openindifftool.GetDiffFromEditorTab.gif)
 
+## Usage4
+
+1. Select text in a text editor.
+2. Right-click and select `openindifftool.GetDiffFromSelectedText` from the context menu.
+3. Select another text to compare in the same way, or use `openindifftool.GetDiffFromEditorTab` to compare with a file.
+4. The diff tool you set up will show you the differences.
+
+   **Tip**: Selected texts are temporarily saved as files for comparison.
+
+![Image](./resources/img/openindifftool.GetDiffFromSelectedText.gif)
+
 ## Config
 
 - `openindifftool.diffTool` : Path to the diff tool executable (default :`WinMergeU.exe`)
