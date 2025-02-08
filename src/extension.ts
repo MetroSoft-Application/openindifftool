@@ -71,7 +71,6 @@ async function handleOpenFromEditorTab(uri: vscode.Uri) {
 	if (!firstSelectedTabUri) {
 		// 最初の選択を保持する
 		firstSelectedTabUri = await getOrSaveFileUri(uri);
-		vscode.window.showInformationMessage(`First file selected: ${firstSelectedTabUri.fsPath}.`);
 	} else {
 		// 2回目の選択で比較を行う
 		const secondSelectedTabUri = await getOrSaveFileUri(uri);
@@ -94,8 +93,11 @@ async function getOrSaveFileUri(uri: vscode.Uri): Promise<vscode.Uri> {
 		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-'));
 		const tempFilePath = path.join(tempDir, path.basename(uri.fsPath));
 		fs.writeFileSync(tempFilePath, document.getText());
+
+		console.log(`File saved to: ${tempFilePath}`);
 		// 一時ファイルのパスを配列に追加
 		tempFiles.push(tempFilePath);
+		vscode.window.showInformationMessage(`First file selected: ${tempFilePath}.`);
 		return vscode.Uri.file(tempFilePath);
 	}
 	return uri;

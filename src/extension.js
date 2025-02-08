@@ -125,7 +125,6 @@ function handleOpenFromEditorTab(uri) {
                 case 1:
                     // 最初の選択を保持する
                     firstSelectedTabUri = _a.sent();
-                    vscode.window.showInformationMessage("First file selected: ".concat(firstSelectedTabUri.fsPath, "."));
                     return [3 /*break*/, 5];
                 case 2: return [4 /*yield*/, getOrSaveFileUri(uri)];
                 case 3:
@@ -159,8 +158,10 @@ function getOrSaveFileUri(uri) {
                         tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-'));
                         tempFilePath = path.join(tempDir, path.basename(uri.fsPath));
                         fs.writeFileSync(tempFilePath, document.getText());
+                        console.log("File saved to: ".concat(tempFilePath));
                         // 一時ファイルのパスを配列に追加
                         tempFiles.push(tempFilePath);
+                        vscode.window.showInformationMessage("First file selected: ".concat(tempFilePath, "."));
                         return [2 /*return*/, vscode.Uri.file(tempFilePath)];
                     }
                     return [2 /*return*/, uri];
