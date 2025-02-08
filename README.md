@@ -26,29 +26,29 @@ Select two files from the Explorer to compare differences.
 
 ## Usage3
 
-1. Select modified file in a text editor.
-2. Select `openindifftool.GetDiffFromEditorTab` from the context menu of the tab.
-3. Select `openindifftool.GetDiffFromEditorTab` from the context menu of the tab of the compared file.
+1. Select a file in a text editor.
+2. Select `openindifftool.GetDiffFromEditorTab` from the tab context menu.
+3. Select `openindifftool.GetDiffFromEditorTab` from the tab context menu of the file to compare.
 4. The diff tool you set up will show you the differences.
 
    **Tip**: `openindifftool.GetDiffFromEditorTab` supports comparing unsaved files.
 
-![Image](./resources/img/openindifftool.GetDiffFromEditorTab.gif)
+![Image](./resources/img/openindifftool.GetDiffFromEditorTab.Sample.gif)
 
 ## Usage4
 
 1. Select text in a text editor.
-2. Right-click and select `openindifftool.GetDiffFromSelectedText` from the context menu.
-3. Select another text to compare in the same way, or use `openindifftool.GetDiffFromEditorTab` to compare with a file.
+2. Select `openindifftool.GetDiffFromSelectedText` from the context menu.
+3. Select another text to compare in the same way, or use `openindifftool.GetDiffFromEditorTab` from the tab context menu to compare with a file.
 4. The diff tool you set up will show you the differences.
 
    **Tip**: Selected texts are temporarily saved as files for comparison.
 
-![Image](./resources/img/openindifftool.GetDiffFromSelectedText.gif)
+![Image](./resources/img/openindifftool.GetDiffFromSelectedText.Sample.gif)
 
 ## Config
 
-- `openindifftool.diffTool` : Path to the diff tool executable (default :`WinMergeU.exe`)
+- `openindifftool.diffTool` : Path to the diff tool executable (default :`WinMergeU.exe`
 
 ## Requirements
 

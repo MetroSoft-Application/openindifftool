@@ -2,7 +2,7 @@
   "name": "openindifftool",
   "displayName": "Open In DiffTool",
   "description": "Select the two files from Explorer and compare the differences with any diff tool.",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "publisher": "MetroSoft-Application",
   "icon": "resources/img/openindifftool.png",
   "repository": {

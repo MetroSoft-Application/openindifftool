@@ -29,3 +29,9 @@
 ## [1.0.7]
 
 - v1.0.6 bug fix
+
+## [1.0.8]
+
+- Add text selection comparison feature
+- Support comparing selected text with files
+- Support temporary file creation for text comparison
